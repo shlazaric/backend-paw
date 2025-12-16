@@ -1,23 +1,31 @@
-import { MongoClient } from 'mongodb';
-
-import { config } from 'dotenv';
-
-config();
+const { MongoClient } = require("mongodb");
+require("dotenv").config();
 
 const mongoURI = process.env.MONGO_URI;
-const db_name = process.env.DB_NAME;
+const dbName = process.env.DB_NAME;
+
+let db;
 
 async function connectToDatabase() {
     try {
         const client = new MongoClient(mongoURI);
         await client.connect();
-        console.log('Uspješno spajanje na bazu podataka');
-        let db = client.db(db_pawfectstay);
+
+        db = client.db(dbName);
+        console.log("✅ Spojeno na MongoDB Atlas");
+
         return db;
     } catch (error) {
-        console.error('Greška prilikom spajanja na bazu podataka', error);
+        console.error("❌ Greška pri spajanju na bazu", error);
         throw error;
     }
 }
 
-export { connectToDatabase };
+function getDb() {
+    if (!db) {
+        throw new Error("Baza nije inicijalizirana!");
+    }
+    return db;
+}
+
+module.exports = { connectToDatabase, getDb };
