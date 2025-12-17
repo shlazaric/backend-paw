@@ -1,12 +1,14 @@
-const { MongoClient } = require("mongodb");
-require("dotenv").config();
+import { MongoClient } from "mongodb";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const mongoURI = process.env.MONGO_URI;
 const dbName = process.env.DB_NAME;
 
 let db;
 
-async function connectToDatabase() {
+export async function connectToDatabase() {
     try {
         const client = new MongoClient(mongoURI);
         await client.connect();
@@ -21,11 +23,9 @@ async function connectToDatabase() {
     }
 }
 
-function getDb() {
+export function getDb() {
     if (!db) {
         throw new Error("Baza nije inicijalizirana!");
     }
     return db;
 }
-
-module.exports = { connectToDatabase, getDb };

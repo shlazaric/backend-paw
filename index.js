@@ -1,7 +1,10 @@
-const express = require("express");
-require("dotenv").config();
+import express from "express";
+import dotenv from "dotenv";
+import { ObjectId } from "mongodb";
 
-const { connectToDatabase, getDb } = require("./db");
+import { connectToDatabase, getDb } from "./db.js";
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,7 +17,7 @@ async function startServer() {
 
 
     app.get("/", (req, res) => {
-        res.send("PawfectStay backend radi s MongoDB ✅");
+        res.send("PawfectStay backend radi 🐾");
     });
 
     app.post("/dogs", async (req, res) => {
@@ -27,25 +30,22 @@ async function startServer() {
             }
 
             const result = await db.collection("dogs").insertOne(dog);
-            res.status(201).json({
-                message: "Pas uspješno dodan",
-                id: result.insertedId,
-            });
-        } catch (error) {
+            res.status(201).json({ id: result.insertedId });
+        } catch (err) {
             res.status(500).json({ message: "Greška na serveru" });
         }
     });
 
-    // Dohvat svih pasa (ADMIN)
     app.get("/dogs", async (req, res) => {
         try {
             const db = getDb();
             const dogs = await db.collection("dogs").find().toArray();
             res.json(dogs);
-        } catch (error) {
+        } catch (err) {
             res.status(500).json({ message: "Greška pri dohvaćanju pasa" });
         }
     });
+
 
 
     app.listen(PORT, () => {
