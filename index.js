@@ -17,7 +17,7 @@ async function startServer() {
 
 
     app.get("/", (req, res) => {
-        res.send("PawfectStay backend radi 🐾");
+        res.send("PawfectStay backend radi");
     });
 
     app.post("/dogs", async (req, res) => {
@@ -49,7 +49,7 @@ async function startServer() {
 
 
     app.listen(PORT, () => {
-        console.log(`🚀 Server radi na http://localhost:${PORT}`);
+        console.log(`Server radi na http://localhost:${PORT}`);
     });
 }
 
