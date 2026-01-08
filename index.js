@@ -14,6 +14,10 @@ app.use(express.json());
 async function startServer() {
     await connectToDatabase();
 
+    app.get("/", (req, res) => {
+        res.send("PawfectStay backend radi");
+    });
+
     app.post("/register", async (req, res) => {
         try {
             const db = getDb();
@@ -72,6 +76,31 @@ async function startServer() {
             });
         } catch {
             res.status(500).json({ message: "Greška pri prijavi" });
+        }
+    });
+
+    app.post("/reservations", async (req, res) => {
+        try {
+            const db = getDb();
+            const { petName, duration, date, time, note } = req.body;
+
+            if (!petName || !duration || !date || !time) {
+                return res.status(400).json({ message: "Nedostaju podaci" });
+            }
+
+            await db.collection("reservations").insertOne({
+                petName,
+                duration,
+                date,
+                time,
+                note,
+                status: "pending",
+                createdAt: new Date()
+            });
+
+            res.status(201).json({ message: "Rezervacija spremljena" });
+        } catch {
+            res.status(500).json({ message: "Greška pri spremanju rezervacije" });
         }
     });
 

@@ -14,11 +14,11 @@ export async function connectToDatabase() {
         await client.connect();
 
         db = client.db(dbName);
-        console.log("✅ Spojeno na MongoDB Atlas");
+        console.log(" Spojeno na MongoDB Atlas");
 
         return db;
     } catch (error) {
-        console.error("❌ Greška pri spajanju na bazu", error);
+        console.error(" Greška pri spajanju na bazu", error);
         throw error;
     }
 }
