@@ -104,6 +104,38 @@ async function startServer() {
         }
     });
 
+    app.post("/dogs", async (req, res) => {
+        try {
+            const db = getDb();
+            const { name, breed, age } = req.body;
+
+            if (!name || !breed || age === undefined) {
+                return res.status(400).json({ message: "Nedostaju podaci o psu" });
+            }
+
+            await db.collection("dogs").insertOne({
+                name,
+                breed,
+                age,
+                createdAt: new Date()
+            });
+
+            res.status(201).json({ message: "Pas uspješno spremljen" });
+        } catch {
+            res.status(500).json({ message: "Greška pri spremanju psa" });
+        }
+    });
+
+    app.get("/dogs", async (req, res) => {
+        try {
+            const db = getDb();
+            const dogs = await db.collection("dogs").find().toArray();
+            res.json(dogs);
+        } catch {
+            res.status(500).json({ message: "Greška pri dohvaćanju pasa" });
+        }
+    });
+
     app.listen(PORT, () => {
         console.log(`Server radi na http://localhost:${PORT}`);
     });
