@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import { ObjectId } from "mongodb";
 import { connectToDatabase, getDb } from "./db.js";
 
 dotenv.config();
@@ -133,6 +134,39 @@ async function startServer() {
             res.json(dogs);
         } catch {
             res.status(500).json({ message: "Greška pri dohvaćanju pasa" });
+        }
+    });
+
+    app.get("/dogs/:id", async (req, res) => {
+        try {
+            const db = getDb();
+            const dog = await db.collection("dogs").findOne({
+                _id: new ObjectId(req.params.id)
+            });
+
+            if (!dog) {
+                return res.status(404).json({ message: "Pas nije pronađen" });
+            }
+
+            res.json(dog);
+        } catch {
+            res.status(500).json({ message: "Greška pri dohvaćanju psa" });
+        }
+    });
+
+    app.put("/dogs/:id", async (req, res) => {
+        try {
+            const db = getDb();
+            const { name, breed, age } = req.body;
+
+            await db.collection("dogs").updateOne(
+                { _id: new ObjectId(req.params.id) },
+                { $set: { name, breed, age } }
+            );
+
+            res.json({ message: "Profil psa ažuriran" });
+        } catch {
+            res.status(500).json({ message: "Greška pri ažuriranju psa" });
         }
     });
 
