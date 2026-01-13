@@ -14,12 +14,14 @@ app.use(express.json());
 
 async function startServer() {
     await connectToDatabase();
+    console.log("MongoDB connected");
 
     app.get("/", (req, res) => {
         res.send("PawfectStay backend radi");
     });
 
-    // registracija korisnika 
+    // ================= USER =================
+
     app.post("/register", async (req, res) => {
         try {
             const db = getDb();
@@ -29,8 +31,8 @@ async function startServer() {
                 return res.status(400).json({ message: "Nedostaju podaci" });
             }
 
-            const existingUser = await db.collection("users").findOne({ email });
-            if (existingUser) {
+            const exists = await db.collection("users").findOne({ email });
+            if (exists) {
                 return res.status(409).json({ message: "Korisnik već postoji" });
             }
 
@@ -48,23 +50,14 @@ async function startServer() {
         }
     });
 
-    // prijava korisnika
     app.post("/login", async (req, res) => {
         try {
             const db = getDb();
             const { email, lozinka } = req.body;
 
-            if (!email || !lozinka) {
-                return res.status(400).json({ message: "Email i lozinka su obavezni" });
-            }
-
             const user = await db.collection("users").findOne({ email });
-            if (!user) {
-                return res.status(401).json({ message: "Korisnik ne postoji" });
-            }
-
-            if (user.lozinka !== lozinka) {
-                return res.status(401).json({ message: "Neispravna lozinka" });
+            if (!user || user.lozinka !== lozinka) {
+                return res.status(401).json({ message: "Neispravni podaci" });
             }
 
             res.json({
@@ -80,126 +73,169 @@ async function startServer() {
         }
     });
 
-    // prijava administratora
+    // ================= ADMIN =================
+
     app.post("/admin/login", (req, res) => {
         const { username, password } = req.body;
 
-        const ADMIN_USERNAME = "admin";
-        const ADMIN_PASSWORD = "admin123";
-
-        if (!username || !password) {
-            return res.status(400).json({
-                message: "Korisničko ime i lozinka su obavezni"
-            });
+        if (username === "admin" && password === "admin123") {
+            return res.json({ role: "admin" });
         }
 
-        if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
-            return res.status(401).json({
-                message: "Pogrešno admin korisničko ime ili lozinka"
-            });
-        }
-
-        res.json({
-            admin: {
-                username: ADMIN_USERNAME,
-                role: "admin"
-            }
-        });
+        res.status(401).json({ message: "Pogrešan admin login" });
     });
 
-    // zakazivanje termina
-    app.post("/reservations", async (req, res) => {
-        try {
-            const db = getDb();
-            const { petName, duration, date, time, note } = req.body;
+    // ================= DOGS =================
 
-            if (!petName || !duration || !date || !time) {
-                return res.status(400).json({ message: "Nedostaju podaci" });
-            }
-
-            await db.collection("reservations").insertOne({
-                petName,
-                duration,
-                date,
-                time,
-                note,
-                status: "pending",
-                createdAt: new Date()
-            });
-
-            res.status(201).json({ message: "Rezervacija spremljena" });
-        } catch {
-            res.status(500).json({ message: "Greška pri spremanju rezervacije" });
-        }
-    });
-
-    // dodavanje psa 
     app.post("/dogs", async (req, res) => {
         try {
             const db = getDb();
-            const { name, breed, age } = req.body;
-
-            if (!name || !breed || age === undefined) {
-                return res.status(400).json({ message: "Nedostaju podaci o psu" });
-            }
+            const { name, breed, age, userId } = req.body;
 
             await db.collection("dogs").insertOne({
                 name,
                 breed,
                 age,
+                ownerId: new ObjectId(userId),
                 createdAt: new Date()
             });
 
-            res.status(201).json({ message: "Pas uspješno spremljen" });
+            res.status(201).json({ message: "Pas spremljen" });
         } catch {
             res.status(500).json({ message: "Greška pri spremanju psa" });
         }
     });
 
-    // dohvacanje svih pasa 
     app.get("/dogs", async (req, res) => {
-        try {
-            const db = getDb();
-            const dogs = await db.collection("dogs").find().toArray();
-            res.json(dogs);
-        } catch {
-            res.status(500).json({ message: "Greška pri dohvaćanju pasa" });
-        }
+        const db = getDb();
+        const { userId } = req.query;
+
+        const dogs = await db.collection("dogs")
+            .find({ ownerId: new ObjectId(userId) })
+            .toArray();
+
+        res.json(dogs);
     });
 
-    // dohvacanje pasa po id-u 
     app.get("/dogs/:id", async (req, res) => {
-        try {
-            const db = getDb();
-            const dog = await db.collection("dogs").findOne({
-                _id: new ObjectId(req.params.id)
-            });
+        const db = getDb();
+        const { id } = req.params;
+        const { userId } = req.query;
 
-            if (!dog) {
-                return res.status(404).json({ message: "Pas nije pronađen" });
-            }
+        const dog = await db.collection("dogs").findOne({
+            _id: new ObjectId(id),
+            ownerId: new ObjectId(userId)
+        });
 
-            res.json(dog);
-        } catch {
-            res.status(500).json({ message: "Greška pri dohvaćanju psa" });
-        }
+        res.json(dog);
     });
 
-    // ažuriranje podataka o psu 
     app.put("/dogs/:id", async (req, res) => {
-        try {
-            const db = getDb();
-            const { name, breed, age } = req.body;
+        const db = getDb();
+        const { id } = req.params;
+        const { userId, name, breed, age } = req.body;
 
-            await db.collection("dogs").updateOne(
-                { _id: new ObjectId(req.params.id) },
-                { $set: { name, breed, age } }
-            );
+        await db.collection("dogs").updateOne(
+            { _id: new ObjectId(id), ownerId: new ObjectId(userId) },
+            { $set: { name, breed, age } }
+        );
 
-            res.json({ message: "Profil psa ažuriran" });
-        } catch {
-            res.status(500).json({ message: "Greška pri ažuriranju psa" });
-        }
+        res.json({ message: "Profil psa ažuriran" });
+    });
+
+    // svi psi (ADMIN)
+    app.get("/dogs/all", async (req, res) => {
+        const db = getDb();
+
+        const dogs = await db.collection("dogs").aggregate([
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "ownerId",
+                    foreignField: "_id",
+                    as: "owner"
+                }
+            },
+            { $unwind: "$owner" },
+            {
+                $project: {
+                    name: 1,
+                    breed: 1,
+                    age: 1,
+                    "owner.ime": 1,
+                    "owner.prezime": 1,
+                    "owner.email": 1
+                }
+            }
+        ]).toArray();
+
+        res.json(dogs);
+    });
+
+    // ================= RESERVATIONS =================
+
+    app.post("/reservations", async (req, res) => {
+        const db = getDb();
+        const { petName, duration, date, time, note, userId } = req.body;
+
+        await db.collection("reservations").insertOne({
+            petName,
+            duration,
+            date,
+            time,
+            note,
+            userId: new ObjectId(userId),
+            status: "pending",
+            statusText: "Na čekanju",
+            createdAt: new Date()
+        });
+
+        res.status(201).json({ message: "Rezervacija spremljena" });
+    });
+
+    app.get("/reservations/user/:userId", async (req, res) => {
+        const db = getDb();
+        const { userId } = req.params;
+
+        const reservations = await db.collection("reservations")
+            .find({ userId: new ObjectId(userId) })
+            .sort({ createdAt: -1 })
+            .toArray();
+
+        res.json(reservations);
+    });
+
+    app.get("/admin/reservations", async (req, res) => {
+        const db = getDb();
+        const reservations = await db.collection("reservations")
+            .find()
+            .toArray();
+
+        res.json(reservations);
+    });
+
+    app.put("/admin/reservations/:id", async (req, res) => {
+        const db = getDb();
+        const { id } = req.params;
+        const { status, statusText } = req.body;
+
+        await db.collection("reservations").updateOne(
+            { _id: new ObjectId(id) },
+            { $set: { status, statusText } }
+        );
+
+        res.json({ message: "Status ažuriran" });
+    });
+
+    app.delete("/admin/reservations/:id", async (req, res) => {
+        const db = getDb();
+        const { id } = req.params;
+
+        await db.collection("reservations").deleteOne({
+            _id: new ObjectId(id)
+        });
+
+        res.json({ message: "Rezervacija obrisana" });
     });
 
     app.listen(PORT, () => {
@@ -208,3 +244,4 @@ async function startServer() {
 }
 
 startServer();
+
