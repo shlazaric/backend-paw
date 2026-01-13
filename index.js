@@ -19,6 +19,7 @@ async function startServer() {
         res.send("PawfectStay backend radi");
     });
 
+    // registracija korisnika 
     app.post("/register", async (req, res) => {
         try {
             const db = getDb();
@@ -29,7 +30,6 @@ async function startServer() {
             }
 
             const existingUser = await db.collection("users").findOne({ email });
-
             if (existingUser) {
                 return res.status(409).json({ message: "Korisnik već postoji" });
             }
@@ -48,6 +48,7 @@ async function startServer() {
         }
     });
 
+    // prijava korisnika
     app.post("/login", async (req, res) => {
         try {
             const db = getDb();
@@ -58,7 +59,6 @@ async function startServer() {
             }
 
             const user = await db.collection("users").findOne({ email });
-
             if (!user) {
                 return res.status(401).json({ message: "Korisnik ne postoji" });
             }
@@ -80,6 +80,34 @@ async function startServer() {
         }
     });
 
+    // prijava administratora
+    app.post("/admin/login", (req, res) => {
+        const { username, password } = req.body;
+
+        const ADMIN_USERNAME = "admin";
+        const ADMIN_PASSWORD = "admin123";
+
+        if (!username || !password) {
+            return res.status(400).json({
+                message: "Korisničko ime i lozinka su obavezni"
+            });
+        }
+
+        if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+            return res.status(401).json({
+                message: "Pogrešno admin korisničko ime ili lozinka"
+            });
+        }
+
+        res.json({
+            admin: {
+                username: ADMIN_USERNAME,
+                role: "admin"
+            }
+        });
+    });
+
+    // zakazivanje termina
     app.post("/reservations", async (req, res) => {
         try {
             const db = getDb();
@@ -105,6 +133,7 @@ async function startServer() {
         }
     });
 
+    // dodavanje psa 
     app.post("/dogs", async (req, res) => {
         try {
             const db = getDb();
@@ -127,6 +156,7 @@ async function startServer() {
         }
     });
 
+    // dohvacanje svih pasa 
     app.get("/dogs", async (req, res) => {
         try {
             const db = getDb();
@@ -137,6 +167,7 @@ async function startServer() {
         }
     });
 
+    // dohvacanje pasa po id-u 
     app.get("/dogs/:id", async (req, res) => {
         try {
             const db = getDb();
@@ -154,6 +185,7 @@ async function startServer() {
         }
     });
 
+    // ažuriranje podataka o psu 
     app.put("/dogs/:id", async (req, res) => {
         try {
             const db = getDb();
