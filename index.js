@@ -85,9 +85,41 @@ async function startServer() {
     res.status(401).json({ message: "Pogrešan admin login" });
   });
 
-  // ================= DOGS =================
+  // ================= DOGS – ADMIN =================
 
-  // ➕ dodaj psa (USER)
+
+  app.get("/dogs/all", async (req, res) => {
+    const db = getDb();
+
+    const dogs = await db.collection("dogs").aggregate([
+      {
+        $lookup: {
+          from: "users",
+          localField: "ownerId",
+          foreignField: "_id",
+          as: "owner"
+        }
+      },
+      { $unwind: "$owner" },
+      {
+        $project: {
+          name: 1,
+          breed: 1,
+          age: 1,
+          owner: {
+            ime: "$owner.ime",
+            prezime: "$owner.prezime",
+            email: "$owner.email"
+          }
+        }
+      }
+    ]).toArray();
+
+    res.json(dogs);
+  });
+
+  // ================= DOGS – USER =================
+
   app.post("/dogs", async (req, res) => {
     try {
       const db = getDb();
@@ -111,7 +143,7 @@ async function startServer() {
     }
   });
 
-  //  USER vidi SAMO svoje pse
+  // svi psi jednog korisnika
   app.get("/dogs", async (req, res) => {
     const db = getDb();
     const { userId } = req.query;
@@ -128,7 +160,7 @@ async function startServer() {
     res.json(dogs);
   });
 
-  //  jedan pas –  vlasnik
+  // jedan pas – samo vlasnik
   app.get("/dogs/:id", async (req, res) => {
     const db = getDb();
     const { id } = req.params;
@@ -150,7 +182,7 @@ async function startServer() {
     res.json(dog);
   });
 
-  //  uređivanje psa – samo vlasnik
+  // uređivanje psa – samo vlasnik
   app.put("/dogs/:id", async (req, res) => {
     const db = getDb();
     const { id } = req.params;
@@ -170,36 +202,6 @@ async function startServer() {
     }
 
     res.json({ message: "Profil psa ažuriran" });
-  });
-
-  // ================= DOGS – ADMIN =================
-
-  app.get("/dogs/all", async (req, res) => {
-    const db = getDb();
-
-    const dogs = await db.collection("dogs").aggregate([
-      {
-        $lookup: {
-          from: "users",
-          localField: "ownerId",
-          foreignField: "_id",
-          as: "owner"
-        }
-      },
-      { $unwind: "$owner" },
-      {
-        $project: {
-          name: 1,
-          breed: 1,
-          age: 1,
-          "owner.ime": 1,
-          "owner.prezime": 1,
-          "owner.email": 1
-        }
-      }
-    ]).toArray();
-
-    res.json(dogs);
   });
 
   // ================= RESERVATIONS =================
