@@ -43,7 +43,7 @@ const verifyAdmin = (req, res, next) => {
   }
 };
 
-// --- Provjera valjanog ObjectId ---
+// --- Provjera  ObjectId ---
 const isValidObjectId = (id) => ObjectId.isValid(id);
 
 async function startServer() {
@@ -90,7 +90,6 @@ async function startServer() {
     res.status(401).json({ message: "Pogrešan admin login" });
   });
 
-  // --- CRUD psi za user ---
   app.post("/dogs", verifyMyWay, async (req, res) => {
     try {
       const db = getDb();
@@ -122,7 +121,7 @@ async function startServer() {
     }
   });
 
-  // --- ADMIN PRIKAZ SVIH PASA (MORA BITI PRIJE /dogs/:id) ---
+  // ---admin-prikaz svih pasa ----
   app.get("/dogs/all", verifyAdmin, async (req, res) => {
     try {
       const db = getDb();
@@ -163,7 +162,7 @@ async function startServer() {
     }
   });
 
-  // --- DOHVAT JEDNOG PSA ---
+  // --- dohvat jednog psa  ---
   app.get("/dogs/:id", async (req, res) => {
     try {
       const db = getDb();
