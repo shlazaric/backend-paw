@@ -9,3 +9,5 @@ Mentor: doc. dr. sc. Nikola Tanković : https://fiputreca.notion.site/Kontakt-st
 Kratki opis funkcionalnosti: PawfectStay je aplikacija namijenjena vlasnicima pasa i administratorima čuvanja pasa. Omogućuje korisnicima registraciju pasa, rezervaciju termina čuvanja, praćenje statusa rezervacija i uređivanje profila pasa. Administratorima omogućuje pregled svih rezervacija i pasa te upravljanje statusima rezervacija. 
 
 Link na javni prototip: https://www.figma.com/proto/sULiVKhfxYog5GFr2mH3Wz/Untitled?node-id=5-53&starting-point-node-id=1%3A2
+
+Link na backend aplikacije : https://backend-paw-1.onrender.com
